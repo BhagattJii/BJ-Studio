@@ -8,7 +8,8 @@ Built on top of Vercel's Chatbot template (Apache-2.0), stripped of every server
 
 - **No database.** Chats, documents and votes live in **your own Google Drive** (hidden `appDataFolder`).
 - **No AI Gateway.** You bring your own API key (BYOK): OpenAI, Anthropic, Google Gemini or OpenRouter.
-- **No accounts on our side.** Sign in with Google — that same OAuth connection gives the app access to a private app folder in *your* Drive.
+- **Clerk-managed login.** Ready-made sign-in UI, user management and session security. No accounts database of our own.
+- **Your own Google Drive.** A separate one-tap Google connection gives the app access to a private app folder in *your* Drive.
 - **End-to-end encrypted.** Everything is encrypted in the browser with a passphrase only you know (AES-256-GCM, PBKDF2-SHA256). The passphrase never leaves your device, and neither does any plaintext.
 
 The app itself is just static files. There is no backend to run, no data to leak, and no bill to pay.
@@ -54,15 +55,14 @@ Your API key ──► provider (OpenAI/Anthropic/Google/OpenRouter) directly fr
    - Authorized JavaScript origins: `http://localhost:3000` and your deployed URL (e.g. `https://bj-studio.vercel.app`).
 5. Copy the **Client ID** (it is public — safe to commit in env).
 
-### 2. Run locally
+### 3. Run locally
 
 ```bash
 pnpm install
-cp .env.example .env.local     # paste NEXT_PUBLIC_GOOGLE_CLIENT_ID
+cp .env.example .env.local
+# paste NEXT_PUBLIC_GOOGLE_CLIENT_ID + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 pnpm dev                       # http://localhost:3000
 ```
-
-No env var? The app will ask for the Client ID on the login screen and store it in your browser.
 
 > Note: on Android/Termux use `pnpm build` (webpack) — Turbopack has no native Android bindings.
 

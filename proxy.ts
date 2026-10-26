@@ -1,8 +1,10 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/ping")) {
-    return new Response("pong", { status: 200 });
-  }
-  return NextResponse.next();
-}
+export default clerkMiddleware();
+
+export const config = {
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};

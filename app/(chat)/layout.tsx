@@ -6,7 +6,7 @@ import { AppSidebar } from "@/components/chat/app-sidebar";
 import { DataStreamProvider } from "@/components/chat/data-stream-provider";
 import { ChatShell } from "@/components/chat/shell";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { VaultGate } from "@/components/vault/vault-gate";
+import { AuthGate } from "@/components/auth/auth-gate";
 import { ActiveChatProvider } from "@/hooks/use-active-chat";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -18,9 +18,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       />
       <DataStreamProvider>
         <Suspense fallback={<div className="flex h-dvh bg-sidebar" />}>
-          <VaultGate>
+          <AuthGate>
             <SidebarShell>{children}</SidebarShell>
-          </VaultGate>
+          </AuthGate>
         </Suspense>
       </DataStreamProvider>
     </>

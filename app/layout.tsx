@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -52,6 +53,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const app = (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      disableTransitionOnChange
+      enableSystem
+    >
+      <TooltipProvider>{children}</TooltipProvider>
+    </ThemeProvider>
+  );
+
   return (
     <html
       className={`${geist.variable} ${geistMono.variable}`}
@@ -67,14 +80,13 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          enableSystem
-        >
-          <TooltipProvider>{children}</TooltipProvider>
-        </ThemeProvider>
+        {clerkKey ? (
+          <ClerkProvider afterSignOutUrl="/" publishableKey={clerkKey}>
+            {app}
+          </ClerkProvider>
+        ) : (
+          app
+        )}
       </body>
     </html>
   );

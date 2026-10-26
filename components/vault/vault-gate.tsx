@@ -50,51 +50,22 @@ function ErrorBox({ message }: { message: string | null }) {
   );
 }
 
-function ClientIdSetup({ onSave }: { onSave: () => void }) {
-  const [value, setValue] = useState(getClientId() ?? "");
-
-  return (
-    <form
-      className="space-y-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setClientId(value);
-        onSave();
-      }}
-    >
-      <div className="space-y-1.5">
-        <Label htmlFor="google-client-id">Google OAuth Client ID</Label>
-        <Input
-          id="google-client-id"
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="xxxxx.apps.googleusercontent.com"
-          value={value}
-        />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Google Cloud Console → APIs & Services → Credentials → OAuth client
-          (Web) banayein, phir Drive API enable karein. Authorized origin me
-          apna app URL daalein.
-        </p>
-      </div>
-      <Button className="w-full" type="submit">
-        Save Client ID
-      </Button>
-    </form>
-  );
-}
-
-export function VaultGate({ children }: { children: ReactNode }) {
+export function VaultGate({
+  children,
+  driveOnly = false,
+}: {
+  children: ReactNode;
+  driveOnly?: boolean;
+}) {
   const snapshot = useVault();
   const [passphrase, setPassphrase] = useState("");
   const [confirm, setConfirm] = useState("");
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsClientId, setNeedsClientId] = useState(false);
 
   useEffect(() => {
     vault.boot().catch(() => undefined);
-    setNeedsClientId(!getClientId());
   }, []);
 
   const run = async (fn: () => Promise<void>) => {
@@ -114,8 +85,9 @@ export function VaultGate({ children }: { children: ReactNode }) {
   const handleSignIn = () =>
     run(async () => {
       if (!getClientId()) {
-        setNeedsClientId(true);
-        throw new Error("Pehle Google Client ID daalo");
+        throw new Error(
+          "Google Client ID missing hai. Deployment env me NEXT_PUBLIC_GOOGLE_CLIENT_ID set karo."
+        );
       }
       await vault.signIn();
     });
@@ -157,21 +129,13 @@ export function VaultGate({ children }: { children: ReactNode }) {
   }
 
   if (snapshot.status === "signed-out") {
-    if (needsClientId) {
-      return (
-        <Shell>
-          <ClientIdSetup onSave={() => setNeedsClientId(false)} />
-        </Shell>
-      );
-    }
-
     return (
       <Shell>
         <div className="space-y-4">
           <div className="rounded-xl bg-muted/50 p-3 text-[12px] leading-relaxed text-muted-foreground">
-            Login = Google. Aapke chats aapke hi Google Drive (app folder) me
-            save honge, AES-256 encrypted. Hamare paas na database hai, na
-            aapka data.
+            {driveOnly
+              ? "Login ho gaya. Ab Google Drive connect karo — vault wahi save hoga jahan aapke baaki Drive files hain (hidden app folder), AES-256 encrypted."
+              : "Login = Google. Aapke chats aapke hi Google Drive (app folder) me save honge, AES-256 encrypted. Hamare paas na database hai, na aapka data."}
           </div>
           <Button
             className="w-full"
@@ -180,16 +144,9 @@ export function VaultGate({ children }: { children: ReactNode }) {
             type="button"
           >
             <GoogleIcon />
-            Continue with Google
+            {driveOnly ? "Connect Google Drive" : "Continue with Google"}
           </Button>
           <ErrorBox message={error ?? snapshot.error} />
-          <button
-            className="w-full text-center text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-            onClick={() => setNeedsClientId(true)}
-            type="button"
-          >
-            Client ID change karna hai?
-          </button>
         </div>
       </Shell>
     );

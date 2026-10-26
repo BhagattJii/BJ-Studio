@@ -28,3 +28,5 @@ tsconfig.tsbuildinfo
 
 *.tsbuildinfo
 .env*
+
+.clerk/
