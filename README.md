@@ -1,71 +1,91 @@
-<a href="https://chatbot.ai-sdk.dev/demo">
-  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
-</a>
+# BJ Studio
 
-<p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
-</p>
+Open-source AI chat app — **your key, your Drive, your data.**
 
-<p align="center">
-  <a href="https://chatbot.ai-sdk.dev/docs"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
-</p>
-<br/>
+Built on top of Vercel's Chatbot template (Apache-2.0), stripped of every server-side dependency:
+
+- **No database.** Chats, documents and votes live in **your own Google Drive** (hidden `appDataFolder`).
+- **No AI Gateway.** You bring your own API key (BYOK): OpenAI, Anthropic, Google Gemini or OpenRouter.
+- **No accounts on our side.** Sign in with Google — that same OAuth connection gives the app access to a private app folder in *your* Drive.
+- **End-to-end encrypted.** Everything is encrypted in the browser with a passphrase only you know (AES-256-GCM, PBKDF2-SHA256). The passphrase never leaves your device, and neither does any plaintext.
+
+The app itself is just static files. There is no backend to run, no data to leak, and no bill to pay.
 
 ## Features
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://ai-sdk.dev/docs/introduction)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+- Streaming chat UI (AI SDK), markdown, reasoning display, dark/light mode
+- Model picker: OpenAI, Anthropic, Google Gemini and OpenRouter (free models included)
+- Multiple chats with auto-generated titles, per-chat history stored in your Drive
+- File attachments (images) sent to vision models and stored encrypted
+- Passphrase lock/unlock, "remember this device", lock & sign out
+- Encrypted vault export / import (backup) and full wipe
+- Optional custom OpenAI-compatible base URL (any proxy / local server)
 
-## Model Providers
+## How it works
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
+```
+Google OAuth (login)
+        │
+        ▼
+Passphrase ──PBKDF2──► AES-256-GCM key (memory only)
+        │
+        ▼
+Vault JSON ──encrypt──► Google Drive appDataFolder   (bjstudio.vault.enc)
+        │
+        └──encrypt──► IndexedDB local cache (offline + fast boot)
 
-### AI Gateway Authentication
+Your API key ──► provider (OpenAI/Anthropic/Google/OpenRouter) directly from the browser
+```
 
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
+- On first run you create a passphrase and a new encrypted vault is written to your Drive.
+- On every other device: sign in with the same Google account, enter the passphrase, done.
+- If Drive is temporarily unreachable the app keeps working locally and syncs later.
 
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
+## Setup (5 minutes)
 
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
+### 1. Google Cloud
 
-## Deploy Your Own
+1. Create a project at [console.cloud.google.com](https://console.cloud.google.com).
+2. **APIs & Services → Library → Google Drive API** → Enable.
+3. **APIs & Services → OAuth consent screen** → External → fill the basics (add yourself as a test user if the app stays in testing).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application**.
+   - Authorized JavaScript origins: `http://localhost:3000` and your deployed URL (e.g. `https://bj-studio.vercel.app`).
+5. Copy the **Client ID** (it is public — safe to commit in env).
 
-You can deploy your own version of Chatbot to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
-
-## Running locally
-
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
-
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+### 2. Run locally
 
 ```bash
 pnpm install
-pnpm db:migrate # Setup database or apply latest database changes
-pnpm dev
+cp .env.example .env.local     # paste NEXT_PUBLIC_GOOGLE_CLIENT_ID
+pnpm dev                       # http://localhost:3000
 ```
 
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+No env var? The app will ask for the Client ID on the login screen and store it in your browser.
+
+> Note: on Android/Termux use `pnpm build` (webpack) — Turbopack has no native Android bindings.
+
+### 3. Deploy
+
+- **Vercel:** import the repo → add `NEXT_PUBLIC_GOOGLE_CLIENT_ID` → deploy. No other services needed.
+- Any static host that supports Next.js output works (Cloudflare Pages via OpenNext, Netlify, self-hosted Node).
+
+### 4. Add your AI key
+
+Open **Settings → AI API keys** and paste a key for at least one provider. Keys are stored encrypted inside your vault and sent only to that provider. Bring your own bill — we never see it.
+
+## Limitations (honest list)
+
+- If you forget the passphrase, **the data is unrecoverable** (that's the point of E2EE). Export backups regularly from Settings.
+- Free Google Drive storage quota applies to your attachments (15 GB normally).
+- You need a Google account. GitHub/Gist sync is not implemented (yet).
+- Artifact tools (document/code/sheet side panel) are not wired in the client-only build — UI is present, generation tools are disabled.
+- Some providers restrict browser (CORS) calls. OpenAI, Anthropic (browser flag), Google AI and OpenRouter work.
+- Rate limits and abuse protection are the provider's responsibility (it's your key).
+
+## Tech
+
+Next.js 16 (App Router) · React 19 · AI SDK 7 · Tailwind CSS 4 · shadcn/ui · Google Identity Services · Web Crypto · Dexie-free IndexedDB · SWR
+
+## Credits & license
+
+UI and app structure derived from [Vercel's Chatbot template](https://github.com/vercel/chatbot) (Apache-2.0). Client-only storage/encryption/BYOK layer by BhagattJii. Licensed under Apache-2.0 — see [LICENSE](./LICENSE).

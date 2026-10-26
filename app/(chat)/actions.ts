@@ -1,64 +1,25 @@
-"use server";
+"use client";
 
-import { generateText, type UIMessage } from "ai";
-import { cookies } from "next/headers";
-import { auth } from "@/app/(auth)/auth";
-import type { VisibilityType } from "@/components/chat/visibility-selector";
-import { titleModel } from "@/lib/ai/models";
-import { titlePrompt } from "@/lib/ai/prompts";
-import { getTitleModel } from "@/lib/ai/providers";
-import {
-  deleteMessagesByChatIdAfterTimestamp,
-  getChatById,
-  getMessageById,
-  updateChatVisibilityById,
-} from "@/lib/db/queries";
-import { getTextFromMessage } from "@/lib/utils";
+import type { UIMessage } from "ai";
+import { generateChatTitle } from "@/lib/local/ai";
+import { vault } from "@/lib/local/vault";
 
-export async function saveChatModelAsCookie(model: string) {
-  const cookieStore = await cookies();
-  cookieStore.set("chat-model", model);
+export function saveChatModelAsCookie(model: string) {
+  document.cookie = `chat-model=${encodeURIComponent(model)}; path=/; max-age=31536000; samesite=lax`;
 }
 
 export async function generateTitleFromUserMessage({
   message,
+  modelId,
 }: {
   message: UIMessage;
+  modelId?: string;
 }) {
-  const { text } = await generateText({
-    instructions: titlePrompt,
-    model: getTitleModel(),
-    prompt: getTextFromMessage(message),
-    providerOptions: {
-      gateway: { order: titleModel.gatewayOrder },
-    },
-  });
-  return text
-    .replace(/^[#*"\s]+/, "")
-    .replace(/["]+$/, "")
-    .trim();
+  return generateChatTitle({ message, modelId });
 }
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
-  const [message] = await getMessageById({ id });
-  if (!message) {
-    throw new Error("Message not found");
-  }
-
-  const chat = await getChatById({ id: message.chatId });
-  if (!chat || chat.userId !== session.user.id) {
-    throw new Error("Unauthorized");
-  }
-
-  await deleteMessagesByChatIdAfterTimestamp({
-    chatId: message.chatId,
-    timestamp: message.createdAt,
-  });
+  vault.deleteTrailingMessages(id);
 }
 
 export async function updateChatVisibility({
@@ -66,17 +27,7 @@ export async function updateChatVisibility({
   visibility,
 }: {
   chatId: string;
-  visibility: VisibilityType;
+  visibility: "private" | "public";
 }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
-  const chat = await getChatById({ id: chatId });
-  if (!chat || chat.userId !== session.user.id) {
-    throw new Error("Unauthorized");
-  }
-
-  await updateChatVisibilityById({ chatId, visibility });
+  vault.setChatVisibility(chatId, visibility);
 }

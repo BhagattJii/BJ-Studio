@@ -6,8 +6,8 @@ import { AppSidebar } from "@/components/chat/app-sidebar";
 import { DataStreamProvider } from "@/components/chat/data-stream-provider";
 import { ChatShell } from "@/components/chat/shell";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { VaultGate } from "@/components/vault/vault-gate";
 import { ActiveChatProvider } from "@/hooks/use-active-chat";
-import { auth } from "../(auth)/auth";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +18,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       />
       <DataStreamProvider>
         <Suspense fallback={<div className="flex h-dvh bg-sidebar" />}>
-          <SidebarShell>{children}</SidebarShell>
+          <VaultGate>
+            <SidebarShell>{children}</SidebarShell>
+          </VaultGate>
         </Suspense>
       </DataStreamProvider>
     </>
@@ -26,12 +28,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 async function SidebarShell({ children }: { children: React.ReactNode }) {
-  const [session, cookieStore] = await Promise.all([auth(), cookies()]);
+  const cookieStore = await cookies();
   const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <AppSidebar user={session?.user} />
+      <AppSidebar />
       <SidebarInset>
         <Toaster
           position="top-center"

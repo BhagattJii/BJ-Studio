@@ -1,5 +1,6 @@
 "use client";
 
+import { localFetch } from "@/lib/local/api";
 import {
   MessageSquareIcon,
   PanelLeftIcon,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User } from "next-auth";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -44,7 +44,7 @@ import {
 } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
-export function AppSidebar({ user }: { user: User | undefined }) {
+export function AppSidebar() {
   const router = useRouter();
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
@@ -74,7 +74,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       revalidate: false,
     });
 
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
+    localFetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
       method: "DELETE",
     });
 
@@ -131,8 +131,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     <span className="font-medium">New chat</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {user ? (
-                  <SidebarMenuItem>
+                <SidebarMenuItem>
                     <SidebarMenuButton
                       className="rounded-lg text-sidebar-foreground/40 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
                       onClick={handleShowDeleteAllDialog}
@@ -142,14 +141,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       <span className="text-[13px]">Delete all</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ) : null}
+                
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          <SidebarHistory user={user} />
+          <SidebarHistory />
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border pt-2 pb-3">
-          {user ? <SidebarUserNav user={user} /> : null}
+          <SidebarUserNav />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>

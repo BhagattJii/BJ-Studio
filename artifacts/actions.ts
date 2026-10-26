@@ -1,8 +1,13 @@
-"use server";
+"use client";
 
-import { getSuggestionsByDocumentId } from "@/lib/db/queries";
+import type { Suggestion } from "@/lib/db/schema";
+import { vault } from "@/lib/local/vault";
 
 export async function getSuggestions({ documentId }: { documentId: string }) {
-  const suggestions = await getSuggestionsByDocumentId({ documentId });
-  return suggestions ?? [];
+  const rows = vault.getSuggestions(documentId).map((row) => ({
+    ...row,
+    createdAt: new Date(row.createdAt),
+    documentCreatedAt: new Date(row.documentCreatedAt),
+  }));
+  return rows as unknown as Suggestion[];
 }

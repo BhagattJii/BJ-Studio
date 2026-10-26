@@ -201,7 +201,7 @@ const PurePreviewMessage = ({
       if (state === "output-available") {
         return (
           <div className={widthClass} key={toolCallId}>
-            <Weather weatherAtLocation={part.output} />
+            <Weather weatherAtLocation={part.output as never} />
           </div>
         );
       }
@@ -319,14 +319,14 @@ const PurePreviewMessage = ({
               <ToolOutput
                 errorText={undefined}
                 output={
-                  "error" in part.output ? (
+                  part.output && "error" in part.output ? (
                     <div className="rounded border p-2 text-red-500">
                       Error: {String(part.output.error)}
                     </div>
                   ) : (
                     <DocumentToolResult
                       isReadonly={isReadonly}
-                      result={part.output}
+                      result={(part.output ?? {}) as never}
                       type="request-suggestions"
                     />
                   )

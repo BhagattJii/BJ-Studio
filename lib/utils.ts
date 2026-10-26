@@ -1,39 +1,50 @@
-import type {
-  UIMessage,
-  UIMessagePart,
-} from 'ai';
+import type { UIMessage, UIMessagePart } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
 import { formatISO } from 'date-fns';
 import { twMerge } from 'tailwind-merge';
-import type { DBMessage, Document } from '@/lib/db/schema';
 import { ChatbotError, type ErrorCode } from './errors';
 import type { ChatMessage, ChatTools, CustomUIDataTypes } from './types';
+
+type LocalMessageLike = {
+  id: string;
+  role: string;
+  parts: unknown;
+  createdAt: string | Date;
+};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export const fetcher = async (url: string) => {
-  const response = await fetch(url);
+  const { localFetch } = await import('@/lib/local/api');
+  const response = await localFetch(url);
 
   if (!response.ok) {
-    const { code, cause } = await response.json();
-    throw new ChatbotError(code as ErrorCode, cause);
+    const { code, cause } = (await response.json().catch(() => ({}))) as {
+      code?: ErrorCode;
+      cause?: string;
+    };
+    throw new ChatbotError(code ?? 'bad_request:api', cause);
   }
 
   return response.json();
 };
 
-export async function fetchWithErrorHandlers(
+export async function localFetchWithErrors(
   input: RequestInfo | URL,
   init?: RequestInit,
 ) {
+  const { localFetch } = await import('@/lib/local/api');
   try {
-    const response = await fetch(input, init);
+    const response = await localFetch(input, init);
 
     if (!response.ok) {
-      const { code, cause } = await response.json();
-      throw new ChatbotError(code as ErrorCode, cause);
+      const { code, cause } = (await response.json().catch(() => ({}))) as {
+        code?: ErrorCode;
+        cause?: string;
+      };
+      throw new ChatbotError(code ?? 'bad_request:api', cause);
     }
 
     return response;
@@ -55,26 +66,28 @@ export function generateUUID(): string {
 }
 
 export function getDocumentTimestampByIndex(
-  documents: Document[],
+  documents: Array<{ createdAt: string | Date }>,
   index: number,
 ) {
   if (!documents) { return new Date(); }
   if (index > documents.length) { return new Date(); }
 
-  return documents[index].createdAt;
+  return new Date(documents[index].createdAt);
 }
 
 export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
 
-export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
+export function convertToUIMessages(
+  messages: LocalMessageLike[],
+): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role as 'user' | 'assistant' | 'system',
     parts: message.parts as UIMessagePart<CustomUIDataTypes, ChatTools>[],
     metadata: {
-      createdAt: formatISO(message.createdAt),
+      createdAt: formatISO(new Date(message.createdAt)),
     },
   }));
 }

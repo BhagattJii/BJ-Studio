@@ -1,6 +1,7 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { localFetch } from "@/lib/local/api";
 import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
 import {
@@ -207,7 +208,7 @@ function PureMultimodalInput({
             action: {
               label: "Delete all",
               onClick: () => {
-                fetch(
+                localFetch(
                   `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`,
                   {
                     method: "DELETE",

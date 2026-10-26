@@ -1,4 +1,5 @@
 import equal from "fast-deep-equal";
+import { localFetch } from "@/lib/local/api";
 import { memo, useCallback } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -44,7 +45,7 @@ export function PureMessageActions({
   }, [copyToClipboard, textFromParts]);
 
   const handleUpvote = useCallback(() => {
-    const upvote = fetch(
+    const upvote = localFetch(
       `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
       {
         body: JSON.stringify({
@@ -89,7 +90,7 @@ export function PureMessageActions({
   }, [chatId, message.id, mutate]);
 
   const handleDownvote = useCallback(() => {
-    const downvote = fetch(
+    const downvote = localFetch(
       `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
       {
         body: JSON.stringify({

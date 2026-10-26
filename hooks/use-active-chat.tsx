@@ -21,12 +21,14 @@ import { useDataStream } from "@/components/chat/data-stream-provider";
 import { getChatHistoryPaginationKey } from "@/components/chat/sidebar-history";
 import { toast } from "@/components/chat/toast";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
-import { useAutoResume } from "@/hooks/use-auto-resume";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
-import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
+import { createLocalChatResponse, generateChatTitle } from "@/lib/local/ai";
+import { saveChatMessages } from "@/lib/local/api";
+import type { LocalVote as Vote } from "@/lib/local/types";
+import { vault } from "@/lib/local/vault";
 import type { ChatMessage } from "@/lib/types";
-import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { fetcher, generateUUID } from "@/lib/utils";
 
 type ActiveChatContextValue = {
   chatId: string;
@@ -104,7 +106,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     status,
     stop,
     regenerate,
-    resumeStream,
     addToolApprovalResponse,
   } = useChat<ChatMessage>({
     generateId: generateUUID,
@@ -129,7 +130,25 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    onFinish: () => {
+    onFinish: ({ messages: finishedMessages }) => {
+      saveChatMessages({ chatId, messages: finishedMessages });
+      const chat = vault.getChat(chatId);
+      if (!chat || chat.title === "New Chat") {
+        const firstUser = finishedMessages.find(
+          (message) => message.role === "user"
+        );
+        if (firstUser) {
+          generateChatTitle({
+            message: firstUser,
+            modelId: currentModelIdRef.current,
+          })
+            .then((title) => {
+              vault.setChatTitle(chatId, title);
+              mutate(unstable_serialize(getChatHistoryPaginationKey));
+            })
+            .catch(() => undefined);
+        }
+      }
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     sendAutomaticallyWhen: ({ messages: currentMessages }) => {
@@ -146,26 +165,18 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     },
     transport: new DefaultChatTransport({
       api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
-      fetch: fetchWithErrorHandlers,
+      fetch: async (_input, init) => {
+        const body = init?.body ? JSON.parse(String(init.body)) : {};
+        return createLocalChatResponse({
+          body,
+          signal: init?.signal ?? undefined,
+        });
+      },
       prepareSendMessagesRequest(request) {
-        const lastMessage = request.messages.at(-1);
-        const isToolApprovalContinuation =
-          lastMessage?.role !== "user" ||
-          request.messages.some((msg) =>
-            msg.parts?.some((part) => {
-              const { state } = part as { state?: string };
-              return (
-                state === "approval-responded" || state === "output-denied"
-              );
-            })
-          );
-
         return {
           body: {
             id: request.id,
-            ...(isToolApprovalContinuation
-              ? { messages: request.messages }
-              : { message: lastMessage }),
+            messages: request.messages,
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibility,
             ...request.body,
@@ -237,12 +248,29 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }
   }, [sendMessage, chatId]);
 
-  useAutoResume({
-    autoResume: !isNewChat && !!chatData,
-    initialMessages,
-    resumeStream,
-    setMessages,
-  });
+  const messagesOwnerRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isNewChat) {
+      messagesOwnerRef.current = chatId;
+    }
+  }, [chatId, isNewChat]);
+
+  useEffect(() => {
+    if (!isNewChat && chatData?.messages) {
+      messagesOwnerRef.current = chatId;
+    }
+  }, [chatId, isNewChat, chatData?.messages]);
+
+  useEffect(() => {
+    if (messages.length === 0 || !vault.isReady()) {
+      return;
+    }
+    if (messagesOwnerRef.current !== chatId) {
+      return;
+    }
+    saveChatMessages({ chatId, messages });
+  }, [chatId, messages]);
 
   const isReadonly = isNewChat ? false : (chatData?.isReadonly ?? false);
 
