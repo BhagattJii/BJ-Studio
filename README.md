@@ -1,5 +1,7 @@
 # BJ Studio
 
+**Live:** https://bjstudioai.vercel.app
+
 Open-source AI chat app — **your key, your Drive, your data.**
 
 Built on top of Vercel's Chatbot template (Apache-2.0), stripped of every server-side dependency:

@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   description: "BJ Studio — AI chat with your own API key. Chats stored in your own Google Drive, end-to-end encrypted.",
-  metadataBase: new URL("https://chat.vercel.ai"),
+  metadataBase: new URL("https://bjstudioai.vercel.app"),
   title: "BJ Studio",
 };
 
