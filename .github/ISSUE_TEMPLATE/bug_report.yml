@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in BJ Studio is broken or behaving unexpectedly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Start a new chat
+        3. Observe the error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Browser console output
+      description: Paste relevant console errors. Please remove API keys and passphrases.
+
+  - type: input
+    id: provider
+    attributes:
+      label: Provider used
+      placeholder: OpenAI / Anthropic / Gemini / OpenRouter
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 141 on Android 15
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security
+      options:
+        - label: This report does not contain secrets, API keys or passphrases
+          required: true
