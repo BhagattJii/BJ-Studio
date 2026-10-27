@@ -1,6 +1,18 @@
+<div align="center">
+
 # BJ Studio
 
-**Live:** https://bjstudioai.vercel.app
+**Privacy-first AI chat app — your key, your Drive, your data.**
+
+[![Live app](https://img.shields.io/badge/live-bjstudioai.vercel.app-4c9aff?style=flat-square&logo=vercel)](https://bjstudioai.vercel.app)
+[![CI](https://github.com/BhagattJii/BJ-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/BhagattJii/BJ-Studio/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs)](https://nextjs.org)
+
+</div>
+
+---
 
 Open-source AI chat app — **your key, your Drive, your data.**
 
@@ -87,6 +99,14 @@ Open **Settings → AI API keys** and paste a key for at least one provider. Key
 ## Tech
 
 Next.js 16 (App Router) · React 19 · AI SDK 7 · Tailwind CSS 4 · shadcn/ui · Google Identity Services · Web Crypto · Dexie-free IndexedDB · SWR
+
+## Contributing
+
+Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the local setup, the rules that keep the "no backend, no tracking" promise, and the PR checklist.
+
+## Security
+
+Found a vulnerability? Report it privately via [GitHub Security Advisories](https://github.com/BhagattJii/BJ-Studio/security/advisories/new) — see [SECURITY.md](SECURITY.md).
 
 ## Credits & license
 
